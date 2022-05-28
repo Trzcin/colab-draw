@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { point } from './types/point';
 import { shape } from './types/shape';
 import { tool } from './types/tool';
+import { render } from './utils/render';
+import { simplifyCurve } from './utils/smoothCurve';
 
 const CANVAS_COLOR = '#eee';
 
@@ -43,30 +45,28 @@ function App() {
         context.lineWidth = 6;
     }, []);
 
+    // render
     useEffect(() => {
         if (ctx == undefined) return;
-
-        // clear canvas
-        ctx.fillStyle = CANVAS_COLOR;
-        ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
-
-        for (let shape of shapes) {
-            ctx.strokeStyle = shape.color;
-            ctx.moveTo(shape.points[0].x, shape.points[0].y);
-            ctx.beginPath();
-            for (let i = 1; i < shape.points.length; i++) {
-                ctx.lineTo(shape.points[i].x, shape.points[i].y);
-            }
-            ctx.stroke();
-        }
+        render(ctx, shapes, CANVAS_COLOR);
     }, [shapes]);
 
-    function handleMouseDown() {
+    function handleMouseDown(
+        e: React.MouseEvent<HTMLCanvasElement, MouseEvent>
+    ) {
+        if (e.button != 0) {
+            return;
+        }
+
         setIsMouseDown(true);
         if (currTool === 'draw') {
             setShapes((prev) => [
                 ...prev,
-                { color: currColor, points: [{ ...mousePos }] },
+                {
+                    color: currColor,
+                    points: [{ ...mousePos }],
+                    handDrawn: false,
+                },
             ]);
         }
     }
@@ -81,8 +81,22 @@ function App() {
         }
     }
 
-    function handleMouseUp() {
+    function handleMouseUp(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
+        if (e.button != 0) {
+            return;
+        }
         setIsMouseDown(false);
+
+        if (currTool == 'draw' && shapes.length > 0) {
+            setShapes((prev) => {
+                const newStuff = [...prev];
+                newStuff[newStuff.length - 1].points = simplifyCurve(
+                    newStuff[newStuff.length - 1].points
+                );
+                newStuff[newStuff.length - 1].handDrawn = true;
+                return newStuff;
+            });
+        }
     }
 
     return (
@@ -92,6 +106,7 @@ function App() {
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
+                onMouseOut={handleMouseUp}
                 style={{ cursor: currTool == 'draw' ? 'crosshair' : 'default' }}
             ></canvas>
         </>
