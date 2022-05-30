@@ -4,18 +4,27 @@ import { shape } from './types/shape';
 import { tool } from './types/tool';
 import { render } from './utils/render';
 import { simplifyCurve } from './utils/smoothCurve';
+import { zoom } from './utils/zoom';
 
 const CANVAS_COLOR = '#eee';
 
 function App() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [ctx, setCtx] = useState<CanvasRenderingContext2D>();
+    const [mousePos, setMousePos] = useState<point>({ x: 0, y: 0 });
+    const [mousePosRaw, setMousePosRaw] = useState<point>({ x: 0, y: 0 });
+    const [isMouseDown, setIsMouseDown] = useState<boolean>(false);
+    const [clickMousePos, setClickMousePos] = useState<point>({ x: 0, y: 0 });
+    const [canvasOrigin, setCanvasOrigin] = useState<point>({ x: 0, y: 0 });
+    const [clickCanvasOrigin, setClickCanvasOrigin] = useState<point>({
+        x: 0,
+        y: 0,
+    });
+    const [canvasScale, setCanvasScale] = useState(1);
 
     const [currTool, setCurrTool] = useState<tool>('draw');
     const [currColor, setCurrColor] = useState<string>('black');
-    const [mousePos, setMousePos] = useState<point>({ x: 0, y: 0 });
     const [shapes, setShapes] = useState<shape[]>([]);
-    const [isMouseDown, setIsMouseDown] = useState<boolean>(false);
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -26,17 +35,16 @@ function App() {
 
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
+        const context = canvas.getContext('2d')!;
 
         window.onresize = () => {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
+            context.lineCap = 'round';
+            context.lineJoin = 'round';
+            context.lineWidth = 6;
+            render(context, shapes, CANVAS_COLOR);
         };
-
-        window.onmousemove = (e) => {
-            setMousePos({ x: e.pageX, y: e.pageY });
-        };
-
-        const context = canvas.getContext('2d')!;
 
         setCtx(context);
 
@@ -51,6 +59,13 @@ function App() {
         render(ctx, shapes, CANVAS_COLOR);
     }, [shapes]);
 
+    function handleScroll(e: React.WheelEvent<HTMLCanvasElement>) {
+        if (!ctx) return;
+        const factor = e.deltaY < 0 ? 1.1 : 0.9;
+        zoom(factor, ctx, canvasOrigin, mousePos, setCanvasScale);
+        render(ctx, shapes, CANVAS_COLOR);
+    }
+
     function handleMouseDown(
         e: React.MouseEvent<HTMLCanvasElement, MouseEvent>
     ) {
@@ -58,7 +73,9 @@ function App() {
             return;
         }
 
+        setClickMousePos({ ...mousePosRaw });
         setIsMouseDown(true);
+        setClickCanvasOrigin({ ...canvasOrigin });
         if (currTool === 'draw') {
             setShapes((prev) => [
                 ...prev,
@@ -71,13 +88,54 @@ function App() {
         }
     }
 
-    function handleMouseMove() {
-        if (currTool === 'draw' && isMouseDown) {
-            setShapes((prev) => {
-                const newStuff = [...prev];
-                newStuff[newStuff.length - 1].points.push({ ...mousePos });
-                return newStuff;
-            });
+    function handleMouseMove(
+        e: React.MouseEvent<HTMLCanvasElement, MouseEvent>
+    ) {
+        if (!ctx) return;
+
+        const transform = ctx.getTransform();
+
+        setMousePos({
+            x: (e.pageX - transform.e) / canvasScale,
+            y: (e.pageY - transform.f) / canvasScale,
+        });
+        setMousePosRaw({
+            x: e.pageX,
+            y: e.pageY,
+        });
+
+        if (!isMouseDown) {
+            return;
+        }
+
+        switch (currTool) {
+            case 'draw':
+                setShapes((prev) => {
+                    const newStuff = [...prev];
+                    newStuff[newStuff.length - 1].points.push({ ...mousePos });
+                    return newStuff;
+                });
+                break;
+            case 'cursor':
+                const dir: point = {
+                    x: (mousePosRaw.x - clickMousePos.x) / canvasScale,
+                    y: (mousePosRaw.y - clickMousePos.y) / canvasScale,
+                };
+                const move: point = {
+                    x: dir.x + clickCanvasOrigin.x - canvasOrigin.x,
+                    y: dir.y + clickCanvasOrigin.y - canvasOrigin.y,
+                };
+
+                ctx.translate(move.x, move.y);
+                setCanvasOrigin((prev) => {
+                    return { x: prev.x + move.x, y: prev.y + move.y };
+                });
+
+                render(ctx, shapes, CANVAS_COLOR);
+
+                break;
+            default:
+                break;
         }
     }
 
@@ -99,6 +157,17 @@ function App() {
         }
     }
 
+    function quickToolSwitch(
+        e: React.MouseEvent<HTMLCanvasElement, MouseEvent>
+    ) {
+        e.preventDefault();
+
+        if (currTool == 'draw') setCurrTool('cursor');
+        else setCurrTool('draw');
+
+        return false;
+    }
+
     return (
         <>
             <canvas
@@ -107,6 +176,8 @@ function App() {
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
                 onMouseOut={handleMouseUp}
+                onContextMenu={quickToolSwitch}
+                onWheel={handleScroll}
                 style={{ cursor: currTool == 'draw' ? 'crosshair' : 'default' }}
             ></canvas>
         </>

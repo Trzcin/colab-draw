@@ -1,3 +1,4 @@
+import { point } from '../types/point';
 import { shape } from '../types/shape';
 
 export function render(
@@ -8,7 +9,10 @@ export function render(
 ) {
     // clear canvas
     ctx.fillStyle = CANVAS_COLOR;
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+    ctx.restore();
 
     for (let shape of shapes) {
         ctx.strokeStyle = shape.color;
