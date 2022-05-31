@@ -7,6 +7,7 @@ export function render(
     CANVAS_COLOR: string,
     showPoints?: boolean
 ) {
+    console.log(shapes);
     // clear canvas
     ctx.fillStyle = CANVAS_COLOR;
     ctx.save();

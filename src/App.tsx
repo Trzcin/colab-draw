@@ -15,12 +15,10 @@ function App() {
     const [mousePosRaw, setMousePosRaw] = useState<point>({ x: 0, y: 0 });
     const [isMouseDown, setIsMouseDown] = useState<boolean>(false);
     const [clickMousePos, setClickMousePos] = useState<point>({ x: 0, y: 0 });
-    const [canvasOrigin, setCanvasOrigin] = useState<point>({ x: 0, y: 0 });
     const [clickCanvasOrigin, setClickCanvasOrigin] = useState<point>({
         x: 0,
         y: 0,
     });
-    const [canvasScale, setCanvasScale] = useState(1);
 
     const [currTool, setCurrTool] = useState<tool>('draw');
     const [currColor, setCurrColor] = useState<string>('black');
@@ -38,11 +36,15 @@ function App() {
         const context = canvas.getContext('2d')!;
 
         window.onresize = () => {
+            const oldTransform = context.getTransform();
+
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
             context.lineCap = 'round';
             context.lineJoin = 'round';
             context.lineWidth = 6;
+            context.setTransform(oldTransform);
+
             render(context, shapes, CANVAS_COLOR);
         };
 
@@ -53,6 +55,24 @@ function App() {
         context.lineWidth = 6;
     }, []);
 
+    //fix resize because react
+    useEffect(() => {
+        if (!ctx || !canvasRef.current) return;
+
+        window.onresize = () => {
+            const oldTransform = ctx.getTransform();
+
+            canvasRef.current!.width = window.innerWidth;
+            canvasRef.current!.height = window.innerHeight;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.lineWidth = 6;
+            ctx.setTransform(oldTransform);
+
+            render(ctx, shapes, CANVAS_COLOR);
+        };
+    }, [shapes, ctx]);
+
     // render
     useEffect(() => {
         if (ctx == undefined) return;
@@ -62,20 +82,22 @@ function App() {
     function handleScroll(e: React.WheelEvent<HTMLCanvasElement>) {
         if (!ctx) return;
         const factor = e.deltaY < 0 ? 1.1 : 0.9;
-        zoom(factor, ctx, canvasOrigin, mousePos, setCanvasScale);
+        zoom(factor, ctx, mousePos);
         render(ctx, shapes, CANVAS_COLOR);
     }
 
     function handleMouseDown(
         e: React.MouseEvent<HTMLCanvasElement, MouseEvent>
     ) {
-        if (e.button != 0) {
+        if (e.button != 0 || !ctx) {
             return;
         }
 
+        const transform = ctx.getTransform();
+
         setClickMousePos({ ...mousePosRaw });
         setIsMouseDown(true);
-        setClickCanvasOrigin({ ...canvasOrigin });
+        setClickCanvasOrigin({ x: transform.e, y: transform.f });
         if (currTool === 'draw') {
             setShapes((prev) => [
                 ...prev,
@@ -96,8 +118,8 @@ function App() {
         const transform = ctx.getTransform();
 
         setMousePos({
-            x: (e.pageX - transform.e) / canvasScale,
-            y: (e.pageY - transform.f) / canvasScale,
+            x: (e.pageX - transform.e) / transform.a,
+            y: (e.pageY - transform.f) / transform.a,
         });
         setMousePosRaw({
             x: e.pageX,
@@ -118,18 +140,15 @@ function App() {
                 break;
             case 'cursor':
                 const dir: point = {
-                    x: (mousePosRaw.x - clickMousePos.x) / canvasScale,
-                    y: (mousePosRaw.y - clickMousePos.y) / canvasScale,
+                    x: mousePosRaw.x - clickMousePos.x,
+                    y: mousePosRaw.y - clickMousePos.y,
                 };
                 const move: point = {
-                    x: dir.x + clickCanvasOrigin.x - canvasOrigin.x,
-                    y: dir.y + clickCanvasOrigin.y - canvasOrigin.y,
+                    x: dir.x + clickCanvasOrigin.x - transform.e,
+                    y: dir.y + clickCanvasOrigin.y - transform.f,
                 };
 
                 ctx.translate(move.x, move.y);
-                setCanvasOrigin((prev) => {
-                    return { x: prev.x + move.x, y: prev.y + move.y };
-                });
 
                 render(ctx, shapes, CANVAS_COLOR);
 
@@ -143,9 +162,9 @@ function App() {
         if (e.button != 0) {
             return;
         }
-        setIsMouseDown(false);
 
-        if (currTool == 'draw' && shapes.length > 0) {
+        if (currTool == 'draw' && shapes.length > 0 && isMouseDown) {
+            setIsMouseDown(false);
             setShapes((prev) => {
                 const newStuff = [...prev];
                 newStuff[newStuff.length - 1].points = simplifyCurve(
@@ -154,6 +173,8 @@ function App() {
                 newStuff[newStuff.length - 1].handDrawn = true;
                 return newStuff;
             });
+        } else {
+            setIsMouseDown(false);
         }
     }
 
