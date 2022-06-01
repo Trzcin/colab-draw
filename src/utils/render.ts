@@ -1,4 +1,3 @@
-import { point } from '../types/point';
 import { shape } from '../types/shape';
 
 export function render(
@@ -7,7 +6,6 @@ export function render(
     CANVAS_COLOR: string,
     showPoints?: boolean
 ) {
-    console.log(shapes);
     // clear canvas
     ctx.fillStyle = CANVAS_COLOR;
     ctx.save();
@@ -17,41 +15,56 @@ export function render(
 
     for (let shape of shapes) {
         ctx.strokeStyle = shape.color;
-        ctx.moveTo(shape.points[0].x, shape.points[0].y);
-        ctx.beginPath();
 
-        if (shape.handDrawn && shape.points.length >= 3) {
-            for (let i = 0; i < shape.points.length - 1; i++) {
-                const xc = (shape.points[i].x + shape.points[i + 1].x) / 2;
-                const yc = (shape.points[i].y + shape.points[i + 1].y) / 2;
+        if (shape.type == 'polygon') {
+            ctx.moveTo(shape.points[0].x, shape.points[0].y);
+            ctx.beginPath();
 
-                ctx.quadraticCurveTo(
-                    shape.points[i].x,
-                    shape.points[i].y,
-                    xc,
-                    yc
+            if (shape.handDrawn && shape.points.length >= 3) {
+                for (let i = 0; i < shape.points.length - 1; i++) {
+                    const xc = (shape.points[i].x + shape.points[i + 1].x) / 2;
+                    const yc = (shape.points[i].y + shape.points[i + 1].y) / 2;
+
+                    ctx.quadraticCurveTo(
+                        shape.points[i].x,
+                        shape.points[i].y,
+                        xc,
+                        yc
+                    );
+                }
+                ctx.lineTo(
+                    shape.points[shape.points.length - 1].x,
+                    shape.points[shape.points.length - 1].y
                 );
+
+                ctx.stroke();
+            } else {
+                for (let i = 0; i < shape.points.length; i++) {
+                    ctx.lineTo(shape.points[i].x, shape.points[i].y);
+                }
+                ctx.stroke();
             }
-            ctx.lineTo(
-                shape.points[shape.points.length - 1].x,
-                shape.points[shape.points.length - 1].y
+
+            if (showPoints) {
+                ctx.fillStyle = 'red';
+                for (let p of shape.points) {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        } else if (shape.type == 'ellipse') {
+            ctx.beginPath();
+            ctx.ellipse(
+                shape.center.x,
+                shape.center.y,
+                shape.radius.x,
+                shape.radius.y,
+                0,
+                0,
+                Math.PI * 2
             );
-
             ctx.stroke();
-        } else {
-            for (let i = 1; i < shape.points.length; i++) {
-                ctx.lineTo(shape.points[i].x, shape.points[i].y);
-            }
-            ctx.stroke();
-        }
-
-        if (showPoints) {
-            ctx.fillStyle = 'red';
-            for (let p of shape.points) {
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
-                ctx.fill();
-            }
         }
     }
 }

@@ -14,15 +14,19 @@ function App() {
     const [mousePos, setMousePos] = useState<point>({ x: 0, y: 0 });
     const [mousePosRaw, setMousePosRaw] = useState<point>({ x: 0, y: 0 });
     const [isMouseDown, setIsMouseDown] = useState<boolean>(false);
-    const [clickMousePos, setClickMousePos] = useState<point>({ x: 0, y: 0 });
+    const [clickMousePosRaw, setClickMousePosRaw] = useState<point>({
+        x: 0,
+        y: 0,
+    });
     const [clickCanvasOrigin, setClickCanvasOrigin] = useState<point>({
         x: 0,
         y: 0,
     });
 
-    const [currTool, setCurrTool] = useState<tool>('draw');
+    const [currTool, setCurrTool] = useState<tool>('polygon');
     const [currColor, setCurrColor] = useState<string>('black');
     const [shapes, setShapes] = useState<shape[]>([]);
+    const [isUsingPolygon, setIsUsingPolygon] = useState<boolean>(false);
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -95,18 +99,87 @@ function App() {
 
         const transform = ctx.getTransform();
 
-        setClickMousePos({ ...mousePosRaw });
+        setClickMousePosRaw({ ...mousePosRaw });
         setIsMouseDown(true);
         setClickCanvasOrigin({ x: transform.e, y: transform.f });
-        if (currTool === 'draw') {
-            setShapes((prev) => [
-                ...prev,
-                {
-                    color: currColor,
-                    points: [{ ...mousePos }],
-                    handDrawn: false,
-                },
-            ]);
+
+        switch (currTool) {
+            case 'draw':
+                setShapes((prev) => [
+                    ...prev,
+                    {
+                        type: 'polygon',
+                        color: currColor,
+                        points: [{ ...mousePos }],
+                        handDrawn: false,
+                    },
+                ]);
+                break;
+            case 'line':
+                setShapes((prev) => [
+                    ...prev,
+                    {
+                        type: 'polygon',
+                        color: currColor,
+                        points: [{ ...mousePos }, { ...mousePos }],
+                        handDrawn: false,
+                    },
+                ]);
+                break;
+            case 'rect':
+                setShapes((prev) => [
+                    ...prev,
+                    {
+                        type: 'polygon',
+                        color: currColor,
+                        points: [
+                            { ...mousePos },
+                            { ...mousePos },
+                            { ...mousePos },
+                            { ...mousePos },
+                            { ...mousePos },
+                        ],
+                        handDrawn: false,
+                    },
+                ]);
+                break;
+            case 'ellipse':
+                setShapes((prev) => [
+                    ...prev,
+                    {
+                        type: 'ellipse',
+                        color: currColor,
+                        center: { ...mousePos },
+                        radius: { x: 0, y: 0 },
+                    },
+                ]);
+                break;
+            case 'polygon':
+                if (!isUsingPolygon) {
+                    setShapes((prev) => [
+                        ...prev,
+                        {
+                            type: 'polygon',
+                            color: currColor,
+                            points: [{ ...mousePos }, { ...mousePos }],
+                            handDrawn: false,
+                        },
+                    ]);
+                    setIsUsingPolygon(true);
+                } else {
+                    setShapes((prev) => {
+                        const newStuff = [...prev];
+                        const lastShape = newStuff[newStuff.length - 1];
+                        if (lastShape.type != 'polygon') {
+                            return newStuff;
+                        }
+
+                        lastShape.points.push({ ...mousePos });
+                        return newStuff;
+                    });
+                }
+            default:
+                break;
         }
     }
 
@@ -126,6 +199,19 @@ function App() {
             y: e.pageY,
         });
 
+        if (currTool == 'polygon' && isUsingPolygon) {
+            setShapes((prev) => {
+                const newStuff = [...prev];
+                const lastShape = newStuff[newStuff.length - 1];
+                if (lastShape.type != 'polygon') {
+                    return newStuff;
+                }
+
+                lastShape.points[lastShape.points.length - 1] = { ...mousePos };
+                return newStuff;
+            });
+        }
+
         if (!isMouseDown) {
             return;
         }
@@ -134,14 +220,19 @@ function App() {
             case 'draw':
                 setShapes((prev) => {
                     const newStuff = [...prev];
-                    newStuff[newStuff.length - 1].points.push({ ...mousePos });
+                    const lastShape = newStuff[newStuff.length - 1];
+                    if (lastShape.type != 'polygon') {
+                        return newStuff;
+                    }
+
+                    lastShape.points.push({ ...mousePos });
                     return newStuff;
                 });
                 break;
             case 'cursor':
                 const dir: point = {
-                    x: mousePosRaw.x - clickMousePos.x,
-                    y: mousePosRaw.y - clickMousePos.y,
+                    x: mousePosRaw.x - clickMousePosRaw.x,
+                    y: mousePosRaw.y - clickMousePosRaw.y,
                 };
                 const move: point = {
                     x: dir.x + clickCanvasOrigin.x - transform.e,
@@ -152,6 +243,74 @@ function App() {
 
                 render(ctx, shapes, CANVAS_COLOR);
 
+                break;
+            case 'line':
+                setShapes((prev) => {
+                    const newStuff = [...prev];
+                    const lastShape = newStuff[newStuff.length - 1];
+                    if (lastShape.type != 'polygon') {
+                        return newStuff;
+                    }
+
+                    lastShape.points[1] = { ...mousePos };
+                    return newStuff;
+                });
+                break;
+            case 'rect':
+                setShapes((prev) => {
+                    const newStuff = [...prev];
+                    const lastShape = newStuff[newStuff.length - 1];
+                    if (lastShape.type != 'polygon') {
+                        return newStuff;
+                    }
+
+                    const clickPos = lastShape.points[0];
+                    lastShape.points = [
+                        clickPos,
+                        { x: mousePos.x, y: clickPos.y },
+                        { ...mousePos },
+                        { x: clickPos.x, y: mousePos.y },
+                        clickPos,
+                    ];
+                    return newStuff;
+                });
+                break;
+            case 'ellipse':
+                setShapes((prev) => {
+                    const newStuff = [...prev];
+                    const lastShape = newStuff[newStuff.length - 1];
+                    if (lastShape.type != 'ellipse') {
+                        return newStuff;
+                    }
+
+                    const clickPos: point = {
+                        x:
+                            mousePos.x > lastShape.center.x
+                                ? lastShape.center.x - lastShape.radius.x
+                                : lastShape.center.x + lastShape.radius.x,
+                        y:
+                            mousePos.y > lastShape.center.y
+                                ? lastShape.center.y - lastShape.radius.y
+                                : lastShape.center.y + lastShape.radius.y,
+                    };
+                    const newCenter: point = {
+                        x: (clickPos.x + mousePos.x) / 2,
+                        y: (clickPos.y + mousePos.y) / 2,
+                    };
+                    const newRadius: point = {
+                        x: Math.abs(newCenter.x - mousePos.x),
+                        y: Math.abs(newCenter.y - mousePos.y),
+                    };
+
+                    newStuff[newStuff.length - 1] = {
+                        type: 'ellipse',
+                        color: lastShape.color,
+                        center: newCenter,
+                        radius: newRadius,
+                    };
+
+                    return newStuff;
+                });
                 break;
             default:
                 break;
@@ -167,10 +326,13 @@ function App() {
             setIsMouseDown(false);
             setShapes((prev) => {
                 const newStuff = [...prev];
-                newStuff[newStuff.length - 1].points = simplifyCurve(
-                    newStuff[newStuff.length - 1].points
-                );
-                newStuff[newStuff.length - 1].handDrawn = true;
+                const lastShape = newStuff[newStuff.length - 1];
+                if (lastShape.type != 'polygon') {
+                    return newStuff;
+                }
+
+                lastShape.points = simplifyCurve(lastShape.points);
+                lastShape.handDrawn = true;
                 return newStuff;
             });
         } else {
@@ -182,11 +344,30 @@ function App() {
         e: React.MouseEvent<HTMLCanvasElement, MouseEvent>
     ) {
         e.preventDefault();
+        endPolygon();
 
         if (currTool == 'draw') setCurrTool('cursor');
         else setCurrTool('draw');
 
         return false;
+    }
+
+    function endPolygon() {
+        if (shapes.length == 0) {
+            return;
+        }
+
+        setIsUsingPolygon(false);
+        setShapes((prev) => {
+            const newStuff = [...prev];
+            const lastShape = newStuff[newStuff.length - 1];
+            if (lastShape.type != 'polygon') {
+                return newStuff;
+            }
+
+            lastShape.points.pop();
+            return newStuff;
+        });
     }
 
     return (
@@ -199,7 +380,13 @@ function App() {
                 onMouseOut={handleMouseUp}
                 onContextMenu={quickToolSwitch}
                 onWheel={handleScroll}
-                style={{ cursor: currTool == 'draw' ? 'crosshair' : 'default' }}
+                style={{
+                    cursor: currTool == 'cursor' ? 'default' : 'crosshair',
+                }}
+                onKeyDown={(e) => {
+                    if (e.key == 'Escape') endPolygon();
+                }}
+                tabIndex={-1}
             ></canvas>
         </>
     );
