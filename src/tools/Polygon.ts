@@ -16,6 +16,8 @@ function mouseDown(args: MouseArguments) {
                 color: args.currColor,
                 points: [{ ...args.mousePos }, { ...args.mousePos }],
                 handDrawn: false,
+                lineWidth: args.lineWidth,
+                strokeStyle: args.strokeStyle,
             },
         ]);
         args.setIsUsingPolygon(true);

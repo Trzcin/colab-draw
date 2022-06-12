@@ -1,5 +1,5 @@
 import { point } from './point';
-import { shape } from './shape';
+import { shape, stroke } from './shape';
 
 export type tool = {
     name:
@@ -28,4 +28,6 @@ export type MouseArguments = {
     clickCanvasOrigin: point;
     shapesLength: number;
     setIsUsingPolygon: React.Dispatch<React.SetStateAction<boolean>>;
+    lineWidth: number;
+    strokeStyle: stroke;
 };

@@ -15,6 +15,7 @@ export function render(
 
     for (let shape of shapes) {
         ctx.strokeStyle = shape.color;
+        ctx.lineWidth = shape.lineWidth;
 
         if (shape.type == 'polygon') {
             ctx.moveTo(shape.points[0].x, shape.points[0].y);

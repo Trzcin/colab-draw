@@ -21,6 +21,8 @@ function mouseDown(args: MouseArguments) {
                 { ...args.mousePos },
             ],
             handDrawn: false,
+            lineWidth: args.lineWidth,
+            strokeStyle: args.strokeStyle,
         },
     ]);
 }

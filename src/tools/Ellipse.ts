@@ -16,6 +16,8 @@ function mouseDown(args: MouseArguments) {
             color: args.currColor,
             center: { ...args.mousePos },
             radius: { x: 0, y: 0 },
+            lineWidth: args.lineWidth,
+            strokeStyle: args.strokeStyle,
         },
     ]);
 }
@@ -56,6 +58,8 @@ function mouseMove(args: MouseArguments) {
             color: lastShape.color,
             center: newCenter,
             radius: newRadius,
+            lineWidth: args.lineWidth,
+            strokeStyle: args.strokeStyle,
         };
 
         return newStuff;

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
+import { Toolbar } from './Toolbar';
 import { Draw } from './tools/Tools';
 import { point } from './types/point';
-import { shape } from './types/shape';
+import { shape, stroke } from './types/shape';
 import { tool } from './types/tool';
 import { render } from './utils/render';
 import { zoom } from './utils/zoom';
@@ -27,6 +28,9 @@ function App() {
     const [currColor, setCurrColor] = useState<string>('black');
     const [shapes, setShapes] = useState<shape[]>([]);
     const [isUsingPolygon, setIsUsingPolygon] = useState<boolean>(false);
+    const [lineWidth, setLineWidth] = useState(6);
+    const [strokeStyle, setStrokeStyle] = useState<stroke>('solid');
+    const [hideDropdowns, setHideDropdowns] = useState(false);
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -102,6 +106,7 @@ function App() {
         setClickMousePosRaw({ ...mousePosRaw });
         setIsMouseDown(true);
         setClickCanvasOrigin({ x: transform.e, y: transform.f });
+        setHideDropdowns(true);
 
         currTool.mouseDown({
             ctx,
@@ -115,6 +120,8 @@ function App() {
             setIsUsingPolygon,
             setShapes,
             shapesLength: shapes.length,
+            lineWidth,
+            strokeStyle,
         });
 
         render(ctx, shapes, CANVAS_COLOR);
@@ -148,6 +155,8 @@ function App() {
             setIsUsingPolygon,
             setShapes,
             shapesLength: shapes.length,
+            lineWidth,
+            strokeStyle,
         });
 
         render(ctx, shapes, CANVAS_COLOR);
@@ -170,9 +179,12 @@ function App() {
             setIsUsingPolygon,
             setShapes,
             shapesLength: shapes.length,
+            lineWidth,
+            strokeStyle,
         });
 
         setIsMouseDown(false);
+        setHideDropdowns(false);
         render(ctx, shapes, CANVAS_COLOR);
     }
 
@@ -222,6 +234,16 @@ function App() {
                 }}
                 tabIndex={-1}
             ></canvas>
+            <Toolbar
+                tool={currTool}
+                setTool={setCurrTool}
+                setCurrColor={setCurrColor}
+                lineWidth={lineWidth}
+                setLineWidth={setLineWidth}
+                strokeStyle={strokeStyle}
+                setStrokeStyle={setStrokeStyle}
+                hideDropdowns={hideDropdowns}
+            ></Toolbar>
         </>
     );
 }
