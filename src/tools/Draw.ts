@@ -12,6 +12,7 @@ function mouseDown(args: MouseArguments) {
     args.setShapes((prev) => [
         ...prev,
         {
+            id: '',
             type: 'polygon',
             color: args.currColor,
             points: [{ ...args.mousePos }],
@@ -28,29 +29,30 @@ function mouseMove(args: MouseArguments) {
     }
 
     args.setShapes((prev) => {
-        const newStuff = [...prev];
-        const lastShape = newStuff[newStuff.length - 1];
+        const validShapes = prev.filter((s) => !s.remote);
+        const lastShape = validShapes[validShapes.length - 1];
         if (lastShape.type != 'polygon') {
-            return newStuff;
+            return prev;
         }
 
         lastShape.points.push({ ...args.mousePos });
-        return newStuff;
+        return prev;
     });
 }
 
 function mouseUp(args: MouseArguments) {
     if (args.shapesLength > 0 && args.isMouseDown) {
         args.setShapes((prev) => {
-            const newStuff = [...prev];
-            const lastShape = newStuff[newStuff.length - 1];
+            const validShapes = prev.filter((s) => !s.remote);
+            const lastShape = validShapes[validShapes.length - 1];
             if (lastShape.type != 'polygon') {
-                return newStuff;
+                return prev;
             }
 
             lastShape.points = simplifyCurve(lastShape.points);
             lastShape.handDrawn = true;
-            return newStuff;
+            args.sendShape(lastShape);
+            return prev;
         });
     }
 }

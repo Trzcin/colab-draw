@@ -11,6 +11,7 @@ function mouseDown(args: MouseArguments) {
     args.setShapes((prev) => [
         ...prev,
         {
+            id: '',
             type: 'polygon',
             color: args.currColor,
             points: [
@@ -33,10 +34,10 @@ function mouseMove(args: MouseArguments) {
     }
 
     args.setShapes((prev) => {
-        const newStuff = [...prev];
-        const lastShape = newStuff[newStuff.length - 1];
+        const validShapes = prev.filter((s) => !s.remote);
+        const lastShape = validShapes[validShapes.length - 1];
         if (lastShape.type != 'polygon') {
-            return newStuff;
+            return prev;
         }
 
         const clickPos = lastShape.points[0];
@@ -47,8 +48,17 @@ function mouseMove(args: MouseArguments) {
             { x: clickPos.x, y: args.mousePos.y },
             clickPos,
         ];
-        return newStuff;
+        return prev;
     });
 }
 
-function mouseUp(args: MouseArguments) {}
+function mouseUp(args: MouseArguments) {
+    if (args.shapesLength > 0 && args.isMouseDown) {
+        args.setShapes((prev) => {
+            const validShapes = prev.filter((s) => !s.remote);
+            const lastShape = validShapes[validShapes.length - 1];
+            args.sendShape(lastShape);
+            return prev;
+        });
+    }
+}

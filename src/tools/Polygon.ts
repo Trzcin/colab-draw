@@ -12,6 +12,7 @@ function mouseDown(args: MouseArguments) {
         args.setShapes((prev) => [
             ...prev,
             {
+                id: '',
                 type: 'polygon',
                 color: args.currColor,
                 points: [{ ...args.mousePos }, { ...args.mousePos }],
@@ -23,14 +24,14 @@ function mouseDown(args: MouseArguments) {
         args.setIsUsingPolygon(true);
     } else {
         args.setShapes((prev) => {
-            const newStuff = [...prev];
-            const lastShape = newStuff[newStuff.length - 1];
+            const validShapes = prev.filter((s) => !s.remote);
+            const lastShape = validShapes[validShapes.length - 1];
             if (lastShape.type != 'polygon') {
-                return newStuff;
+                return prev;
             }
 
             lastShape.points.push({ ...args.mousePos });
-            return newStuff;
+            return prev;
         });
     }
 }
@@ -41,14 +42,14 @@ function mouseMove(args: MouseArguments) {
     }
 
     args.setShapes((prev) => {
-        const newStuff = [...prev];
-        const lastShape = newStuff[newStuff.length - 1];
+        const validShapes = prev.filter((s) => !s.remote);
+        const lastShape = validShapes[validShapes.length - 1];
         if (lastShape.type != 'polygon') {
-            return newStuff;
+            return prev;
         }
 
         lastShape.points[lastShape.points.length - 1] = { ...args.mousePos };
-        return newStuff;
+        return prev;
     });
 }
 

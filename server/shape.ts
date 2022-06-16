@@ -9,7 +9,6 @@ export type shape =
           handDrawn: boolean;
           lineWidth: number;
           strokeStyle: stroke;
-          remote?: boolean;
       }
     | {
           id: string;
@@ -19,7 +18,6 @@ export type shape =
           color: string;
           lineWidth: number;
           strokeStyle: stroke;
-          remote?: boolean;
       };
 
 export type stroke = 'solid' | 'dashed' | 'dotted';

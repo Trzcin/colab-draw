@@ -30,4 +30,5 @@ export type MouseArguments = {
     setIsUsingPolygon: React.Dispatch<React.SetStateAction<boolean>>;
     lineWidth: number;
     strokeStyle: stroke;
+    sendShape: (shape: shape) => void;
 };
