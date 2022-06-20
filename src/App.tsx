@@ -40,6 +40,18 @@ function App() {
             setShapes((prev) => [...prev, { ...shape, remote: true }]);
         });
 
+        tempSocket.on('set-shape-id', (id: string) => {
+            setShapes((prev) => {
+                const pendingShape = prev.find((s) => s.id == '');
+                if (pendingShape) {
+                    pendingShape.id = id;
+                } else {
+                    console.error('no pending shape');
+                }
+                return prev;
+            });
+        });
+
         tempSocket.on('update-shape', (id: string, shape: shape) => {
             console.log('updating shape');
             setShapes((prev) =>

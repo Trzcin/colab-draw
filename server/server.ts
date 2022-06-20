@@ -72,6 +72,7 @@ io.on('connection', (socket: Socket) => {
         boards[roomId].push(shape);
 
         socket.broadcast.to(roomId).emit('add-shape', shape);
+        socket.emit('set-shape-id', newShapeId);
     });
 
     socket.on('change', (id: string, shape: shape) => {
