@@ -52,10 +52,12 @@ function App() {
             });
         });
 
-        tempSocket.on('update-shape', (id: string, shape: shape) => {
+        tempSocket.on('update-shape', (shape: shape) => {
             console.log('updating shape');
             setShapes((prev) =>
-                prev.map((s) => (s.id == id ? { ...shape, remote: true } : s))
+                prev.map((s) =>
+                    s.id == shape.id ? { ...shape, remote: true } : s
+                )
             );
         });
 
@@ -75,11 +77,18 @@ function App() {
         socket.emit('create', shape);
     }
 
+    function updateShape(shape: shape) {
+        if (!socket) return;
+        console.log('updating shape');
+        socket.emit('change', shape);
+    }
+
     return (
         <Canvas
             shapes={shapes}
             setShapes={setShapes}
             sendShape={sendShape}
+            updateShape={updateShape}
         ></Canvas>
     );
 }

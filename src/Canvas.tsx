@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
+import { SelectBox } from './SelectBox';
 import { Toolbar } from './Toolbar';
 import { Draw } from './tools/Tools';
+import { c_mode } from './types/cursorMode';
 import { point } from './types/point';
 import { shape, stroke } from './types/shape';
 import { tool } from './types/tool';
@@ -13,9 +15,10 @@ interface props {
     shapes: shape[];
     setShapes: React.Dispatch<React.SetStateAction<shape[]>>;
     sendShape: (shape: shape) => void;
+    updateShape: (shape: shape) => void;
 }
 
-export function Canvas({ setShapes, shapes, sendShape }: props) {
+export function Canvas({ setShapes, shapes, sendShape, updateShape }: props) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [ctx, setCtx] = useState<CanvasRenderingContext2D>();
     const [mousePos, setMousePos] = useState<point>({ x: 0, y: 0 });
@@ -36,6 +39,9 @@ export function Canvas({ setShapes, shapes, sendShape }: props) {
     const [lineWidth, setLineWidth] = useState(6);
     const [strokeStyle, setStrokeStyle] = useState<stroke>('solid');
     const [hideDropdowns, setHideDropdowns] = useState(false);
+    const [selectedShape, setSelectedShape] = useState<shape>();
+    const [cursorMode, setCursorMode] = useState<c_mode>('select');
+    const [clickSelectShape, setClickSelectShape] = useState<shape>();
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -60,6 +66,21 @@ export function Canvas({ setShapes, shapes, sendShape }: props) {
 
             render(context, shapes, CANVAS_COLOR);
         };
+
+        window.onmousemove = (e) => {
+            setMousePosRaw({
+                x: e.pageX,
+                y: e.pageY,
+            });
+        };
+
+        document.addEventListener('mouseout', (e) => {
+            if (!e.relatedTarget) {
+                console.log('adios');
+                //@ts-ignore
+                handleMouseUp(e);
+            }
+        });
 
         setCtx(context);
 
@@ -100,18 +121,22 @@ export function Canvas({ setShapes, shapes, sendShape }: props) {
     }
 
     function handleMouseDown(
-        e: React.MouseEvent<HTMLCanvasElement, MouseEvent>
+        e: React.MouseEvent<
+            HTMLCanvasElement | HTMLButtonElement | HTMLDivElement,
+            MouseEvent
+        >,
+        overwriteCursorMode?: c_mode
     ) {
         if (e.button != 0 || !ctx) {
             return;
         }
-
         const transform = ctx.getTransform();
 
         setClickMousePosRaw({ ...mousePosRaw });
         setIsMouseDown(true);
         setClickCanvasOrigin({ x: transform.e, y: transform.f });
         setHideDropdowns(true);
+        if (selectedShape) setClickSelectShape({ ...selectedShape });
 
         currTool.mouseDown({
             ctx,
@@ -128,13 +153,22 @@ export function Canvas({ setShapes, shapes, sendShape }: props) {
             lineWidth,
             strokeStyle,
             sendShape,
+            setSelectedShape,
+            shapes,
+            cursorMode: overwriteCursorMode ? overwriteCursorMode : cursorMode,
+            clickSelectShape,
+            selectedShape,
+            updateShape,
         });
 
         render(ctx, shapes, CANVAS_COLOR);
     }
 
     function handleMouseMove(
-        e: React.MouseEvent<HTMLCanvasElement, MouseEvent>
+        e: React.MouseEvent<
+            HTMLCanvasElement | HTMLButtonElement | HTMLDivElement,
+            MouseEvent
+        >
     ) {
         if (!ctx) return;
 
@@ -143,10 +177,6 @@ export function Canvas({ setShapes, shapes, sendShape }: props) {
         setMousePos({
             x: (e.pageX - transform.e) / transform.a,
             y: (e.pageY - transform.f) / transform.a,
-        });
-        setMousePosRaw({
-            x: e.pageX,
-            y: e.pageY,
         });
 
         currTool.mouseMove({
@@ -164,16 +194,26 @@ export function Canvas({ setShapes, shapes, sendShape }: props) {
             lineWidth,
             strokeStyle,
             sendShape,
+            setSelectedShape,
+            shapes,
+            cursorMode,
+            clickSelectShape,
+            selectedShape,
+            updateShape,
         });
 
         render(ctx, shapes, CANVAS_COLOR);
     }
 
-    function handleMouseUp(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
+    function handleMouseUp(
+        e: React.MouseEvent<
+            HTMLCanvasElement | HTMLButtonElement | HTMLDivElement,
+            MouseEvent
+        >
+    ) {
         if (e.button != 0 || !ctx) {
             return;
         }
-
         currTool.mouseUp({
             ctx,
             clickCanvasOrigin,
@@ -189,6 +229,12 @@ export function Canvas({ setShapes, shapes, sendShape }: props) {
             lineWidth,
             strokeStyle,
             sendShape,
+            setSelectedShape,
+            shapes,
+            cursorMode,
+            clickSelectShape,
+            selectedShape,
+            updateShape,
         });
 
         setIsMouseDown(false);
@@ -229,7 +275,6 @@ export function Canvas({ setShapes, shapes, sendShape }: props) {
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
-                onMouseOut={handleMouseUp}
                 onContextMenu={quickToolSwitch}
                 onWheel={handleScroll}
                 style={{
@@ -253,6 +298,20 @@ export function Canvas({ setShapes, shapes, sendShape }: props) {
                 setStrokeStyle={setStrokeStyle}
                 hideDropdowns={hideDropdowns}
             ></Toolbar>
+            <SelectBox
+                selectedShape={selectedShape}
+                ctx={ctx}
+                currTool={currTool}
+                setCursorMode={setCursorMode}
+                mousePosRaw={mousePosRaw}
+                setSelectedShape={setSelectedShape}
+                shapes={shapes}
+                isMouseDown={isMouseDown}
+                cursorMode={cursorMode}
+                handleMouseDown={handleMouseDown}
+                handleMouseMove={handleMouseMove}
+                handleMouseUp={handleMouseUp}
+            ></SelectBox>
         </>
     );
 }

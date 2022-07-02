@@ -1,3 +1,4 @@
+import { c_mode } from './cursorMode';
 import { point } from './point';
 import { shape, stroke } from './shape';
 
@@ -31,4 +32,10 @@ export type MouseArguments = {
     lineWidth: number;
     strokeStyle: stroke;
     sendShape: (shape: shape) => void;
+    setSelectedShape: React.Dispatch<React.SetStateAction<shape | undefined>>;
+    shapes: shape[];
+    cursorMode: c_mode;
+    clickSelectShape: shape | undefined;
+    selectedShape: shape | undefined;
+    updateShape: (shape: shape) => void;
 };

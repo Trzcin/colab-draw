@@ -10,6 +10,7 @@ export type shape =
           lineWidth: number;
           strokeStyle: stroke;
           remote?: boolean;
+          rotation?: number;
       }
     | {
           id: string;
@@ -20,6 +21,7 @@ export type shape =
           lineWidth: number;
           strokeStyle: stroke;
           remote?: boolean;
+          rotation?: number;
       };
 
 export type stroke = 'solid' | 'dashed' | 'dotted';

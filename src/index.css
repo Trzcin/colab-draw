@@ -193,3 +193,21 @@ nav > input[type=number] {
 .colors-icon {
     filter: none !important;
 }
+
+.select-box {
+    position: absolute;
+    cursor: move;
+}
+
+.select-border {
+    border: 3px dashed #aaa;
+}
+
+.cursor-btn {
+    background: transparent;
+    outline: none;
+    border: none;
+    cursor: pointer;
+    position: absolute;
+    z-index: 100;
+}

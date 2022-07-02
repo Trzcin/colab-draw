@@ -1,4 +1,5 @@
 import { point } from '../types/point';
+import { lineToPointDist } from './lineToPointDist';
 
 const EPSILON = 1.5;
 
@@ -42,18 +43,4 @@ function DouglasPeucker(points: point[]): point[] {
     }
 
     return resultPoints;
-}
-
-function lineToPointDist(l1: point, l2: point, p: point) {
-    const a = (l1.y - l2.y) / (l1.x - l2.x);
-    const b = l1.y - a * l1.x;
-
-    const A = a;
-    const B = -1;
-    const C = b;
-
-    const top = Math.abs(A * p.x + B * p.y + C);
-    const bot = Math.sqrt(A * A + B * B);
-
-    return top / bot;
 }

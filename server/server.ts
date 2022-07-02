@@ -60,7 +60,7 @@ io.on('connection', (socket: Socket) => {
 
     socket.on('create', (shape: shape) => {
         const roomId = Array.from(socket.rooms).pop();
-        if (!roomId) return;
+        if (!roomId || !boards[roomId]) return;
         let newShapeId = '';
         while (true) {
             newShapeId = genRanHex(10);
@@ -75,11 +75,13 @@ io.on('connection', (socket: Socket) => {
         socket.emit('set-shape-id', newShapeId);
     });
 
-    socket.on('change', (id: string, shape: shape) => {
+    socket.on('change', (shape: shape) => {
         const roomId = Array.from(socket.rooms).pop();
-        if (!roomId) return;
-        boards[roomId] = boards[roomId].map((s) => (s.id != id ? s : shape));
-        socket.broadcast.to(roomId).emit('update-shape', id, shape);
+        if (!roomId || !boards[roomId]) return;
+        boards[roomId] = boards[roomId].map((s) =>
+            s.id != shape.id ? s : shape
+        );
+        socket.broadcast.to(roomId).emit('update-shape', shape);
     });
 
     socket.on('remove', (id: string) => {
