@@ -9,7 +9,7 @@ import { Move, Cursor, Draw, Line, Rect, Text } from './tools/Tools';
 import { useEffect, useState } from 'react';
 import { ToolDropdown } from './components/ToolDropdown';
 import { ColorDropdown } from './components/ColorDropdown';
-import { stroke } from './types/shape';
+import { shape, stroke } from './types/shape';
 import { LineStyleDropdown } from './components/LineStyleDropdown';
 
 const toolUnderLinePos = {
@@ -34,6 +34,8 @@ interface props {
     strokeStyle: stroke;
     setStrokeStyle: React.Dispatch<React.SetStateAction<stroke>>;
     hideDropdowns: boolean;
+    editText: shape | undefined;
+    setEditText: React.Dispatch<React.SetStateAction<shape | undefined>>;
 }
 
 export function Toolbar({
@@ -45,6 +47,8 @@ export function Toolbar({
     strokeStyle,
     setStrokeStyle,
     hideDropdowns,
+    editText,
+    setEditText,
 }: props) {
     const [colors, setColors] = useState<string[]>([
         '#111111',
@@ -181,12 +185,31 @@ export function Toolbar({
             <div className="spacer"></div>
 
             {colors.slice(0, 5).map((c) => (
-                <button onClick={() => setSelectedColor(c)} key={c}>
+                <button
+                    onClick={() =>
+                        editText == undefined
+                            ? setSelectedColor(c)
+                            : setEditText((prev) => {
+                                  if (!prev || prev.type != 'text') return prev;
+                                  prev.color = c;
+                                  return prev;
+                              })
+                    }
+                    key={c}
+                >
                     <svg width={30} height={30}>
                         <circle
                             cx={15}
                             cy={15}
-                            r={selectedColor == c ? 15 : 12}
+                            r={
+                                editText == undefined || editText.type != 'text'
+                                    ? selectedColor == c
+                                        ? 15
+                                        : 12
+                                    : editText.color == c
+                                    ? 15
+                                    : 12
+                            }
                             fill={c}
                         />
                     </svg>
@@ -199,12 +222,20 @@ export function Toolbar({
                 selectedColor={selectedColor}
                 setSelectedColor={setSelectedColor}
                 hideDropdowns={hideDropdowns}
+                editText={editText}
+                setEditText={setEditText}
             ></ColorDropdown>
 
             <div
                 className="underline"
                 style={{
-                    left: colorUnderLinePos[colors.indexOf(selectedColor)],
+                    left: colorUnderLinePos[
+                        colors.indexOf(
+                            editText == undefined || editText.type != 'text'
+                                ? selectedColor
+                                : editText.color
+                        )
+                    ],
                 }}
             ></div>
         </nav>

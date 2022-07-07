@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { SelectBox } from './SelectBox';
+import { TextEditor } from './TextEditor';
 import { Toolbar } from './Toolbar';
 import { Draw } from './tools/Tools';
 import { c_mode } from './types/cursorMode';
@@ -42,6 +43,7 @@ export function Canvas({ setShapes, shapes, sendShape, updateShape }: props) {
     const [selectedShape, setSelectedShape] = useState<shape>();
     const [cursorMode, setCursorMode] = useState<c_mode>('select');
     const [clickSelectShape, setClickSelectShape] = useState<shape>();
+    const [editText, setEditText] = useState<shape>();
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -111,7 +113,26 @@ export function Canvas({ setShapes, shapes, sendShape, updateShape }: props) {
     useEffect(() => {
         if (ctx == undefined) return;
         render(ctx, shapes, CANVAS_COLOR);
-    }, [shapes]);
+    }, [shapes, selectedShape, editText]);
+
+    useEffect(() => {
+        if (currTool.name != 'text' && editText && editText.type == 'text') {
+            if (editText.value == '') {
+                setShapes((prev) => {
+                    const i = prev.indexOf(editText);
+                    prev.splice(i, 1);
+                    return prev;
+                });
+            } else {
+                if (editText.id == '') {
+                    sendShape(editText);
+                } else {
+                    updateShape(editText);
+                }
+            }
+            setEditText(undefined);
+        }
+    }, [currTool, editText]);
 
     function handleScroll(e: React.WheelEvent<HTMLCanvasElement>) {
         if (!ctx) return;
@@ -159,6 +180,8 @@ export function Canvas({ setShapes, shapes, sendShape, updateShape }: props) {
             clickSelectShape,
             selectedShape,
             updateShape,
+            setEditText,
+            editText,
         });
 
         render(ctx, shapes, CANVAS_COLOR);
@@ -200,9 +223,13 @@ export function Canvas({ setShapes, shapes, sendShape, updateShape }: props) {
             clickSelectShape,
             selectedShape,
             updateShape,
+            setEditText,
+            editText,
         });
 
-        render(ctx, shapes, CANVAS_COLOR);
+        if (isMouseDown) {
+            render(ctx, shapes, CANVAS_COLOR);
+        }
     }
 
     function handleMouseUp(
@@ -235,6 +262,8 @@ export function Canvas({ setShapes, shapes, sendShape, updateShape }: props) {
             clickSelectShape,
             selectedShape,
             updateShape,
+            setEditText,
+            editText,
         });
 
         setIsMouseDown(false);
@@ -268,6 +297,32 @@ export function Canvas({ setShapes, shapes, sendShape, updateShape }: props) {
         });
     }
 
+    function handleDrop(e: React.DragEvent<HTMLCanvasElement>) {
+        e.preventDefault();
+        const file = e.dataTransfer.files[0];
+        if (!file) {
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => {
+            const base64 = reader.result?.toString().replace(/.*base64,/, '');
+            if (!base64) return;
+
+            const newShape: shape = {
+                id: '',
+                type: 'image',
+                scale: { x: 1, y: 1 },
+                center: { ...mousePos },
+                base64: '',
+            };
+            setShapes((prev) => [...prev, newShape]);
+
+            sendShape({ ...newShape, base64: base64 });
+        };
+        reader.readAsDataURL(file);
+    }
+
     return (
         <>
             <canvas
@@ -287,6 +342,20 @@ export function Canvas({ setShapes, shapes, sendShape, updateShape }: props) {
                     if (e.key == 'Escape') endPolygon();
                 }}
                 tabIndex={-1}
+                onDrop={(e) => handleDrop(e)}
+                onDragOver={(e) => {
+                    e.preventDefault();
+                    if (!ctx) return;
+                    const transform = ctx.getTransform();
+                    setMousePos({
+                        x: (e.pageX - transform.e) / transform.a,
+                        y: (e.pageY - transform.f) / transform.a,
+                    });
+                    setMousePosRaw({
+                        x: e.pageX,
+                        y: e.pageY,
+                    });
+                }}
             ></canvas>
             <Toolbar
                 tool={currTool}
@@ -297,6 +366,8 @@ export function Canvas({ setShapes, shapes, sendShape, updateShape }: props) {
                 strokeStyle={strokeStyle}
                 setStrokeStyle={setStrokeStyle}
                 hideDropdowns={hideDropdowns}
+                editText={editText}
+                setEditText={setEditText}
             ></Toolbar>
             <SelectBox
                 selectedShape={selectedShape}
@@ -312,6 +383,10 @@ export function Canvas({ setShapes, shapes, sendShape, updateShape }: props) {
                 handleMouseMove={handleMouseMove}
                 handleMouseUp={handleMouseUp}
             ></SelectBox>
+            <TextEditor
+                editText={editText}
+                setEditText={setEditText}
+            ></TextEditor>
         </>
     );
 }

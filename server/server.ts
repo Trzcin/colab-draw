@@ -1,3 +1,4 @@
+import sharp from 'sharp';
 import { Server, Socket } from 'socket.io';
 import { shape } from './shape';
 
@@ -58,7 +59,7 @@ io.on('connection', (socket: Socket) => {
         }
     });
 
-    socket.on('create', (shape: shape) => {
+    socket.on('create', async (shape: shape) => {
         const roomId = Array.from(socket.rooms).pop();
         if (!roomId || !boards[roomId]) return;
         let newShapeId = '';
@@ -69,6 +70,20 @@ io.on('connection', (socket: Socket) => {
             }
         }
         shape.id = newShapeId;
+        if (shape.type == 'image') {
+            const buffer = Buffer.from(shape.base64, 'base64');
+            try {
+                const compressedBuffer = await sharp(buffer)
+                    .webp({ quality: 10 })
+                    .resize(500, 500, { fit: 'inside' })
+                    .toBuffer();
+                shape.base64 = compressedBuffer.toString('base64');
+            } catch (error) {
+                console.log(error);
+            }
+
+            socket.emit('set-img-data', shape.base64);
+        }
         boards[roomId].push(shape);
 
         socket.broadcast.to(roomId).emit('add-shape', shape);

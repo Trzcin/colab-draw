@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import PlusIcon from '../icons/plus_icon.svg';
+import { shape } from '../types/shape';
 
 interface props {
     colors: string[];
@@ -7,6 +8,8 @@ interface props {
     setSelectedColor: React.Dispatch<React.SetStateAction<string>>;
     setColors: React.Dispatch<React.SetStateAction<string[]>>;
     hideDropdowns: boolean;
+    editText: shape | undefined;
+    setEditText: React.Dispatch<React.SetStateAction<shape | undefined>>;
 }
 
 export function ColorDropdown({
@@ -15,6 +18,8 @@ export function ColorDropdown({
     selectedColor,
     setSelectedColor,
     hideDropdowns,
+    editText,
+    setEditText,
 }: props) {
     const [showDrop, setShowDrop] = useState(false);
 
@@ -25,7 +30,15 @@ export function ColorDropdown({
     }, [hideDropdowns]);
 
     function pickColor(c: string) {
-        setSelectedColor(c);
+        if (editText && editText.type == 'text') {
+            setEditText((prev) => {
+                if (!prev || prev.type != 'text') return prev;
+                prev.color = c;
+                return prev;
+            });
+        } else {
+            setSelectedColor(c);
+        }
 
         if (colors.indexOf(c) > 4) {
             setColors((prev) => {
@@ -65,7 +78,16 @@ export function ColorDropdown({
                             <circle
                                 cx={20}
                                 cy={20}
-                                r={selectedColor == c ? 13 : 10}
+                                r={
+                                    editText == undefined ||
+                                    editText.type != 'text'
+                                        ? selectedColor == c
+                                            ? 13
+                                            : 10
+                                        : editText.color == c
+                                        ? 13
+                                        : 10
+                                }
                                 fill={c}
                             ></circle>
 
@@ -73,7 +95,16 @@ export function ColorDropdown({
                                 <circle
                                     cx={20}
                                     cy={20}
-                                    r={selectedColor == c ? 18 : 15}
+                                    r={
+                                        editText == undefined ||
+                                        editText.type != 'text'
+                                            ? selectedColor == c
+                                                ? 18
+                                                : 15
+                                            : editText.color == c
+                                            ? 18
+                                            : 15
+                                    }
                                     stroke="#33b5e5"
                                     strokeWidth={3}
                                     fill="none"

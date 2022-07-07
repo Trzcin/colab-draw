@@ -5,6 +5,7 @@ export function render(
     ctx: CanvasRenderingContext2D,
     shapes: shape[],
     CANVAS_COLOR: string,
+
     showPoints?: boolean
 ) {
     // clear canvas
@@ -15,10 +16,9 @@ export function render(
     ctx.restore();
 
     for (let shape of shapes) {
-        ctx.strokeStyle = shape.color;
-        ctx.lineWidth = shape.lineWidth;
-
         if (shape.type == 'polygon') {
+            ctx.strokeStyle = shape.color;
+            ctx.lineWidth = shape.lineWidth;
             ctx.save();
             const center = findShapeCenter(shape);
 
@@ -83,11 +83,9 @@ export function render(
             }
 
             ctx.restore();
-            ctx.fillStyle = 'red';
-            ctx.beginPath();
-            ctx.arc(center.x, center.y, 10, 0, Math.PI * 2);
-            ctx.fill();
         } else if (shape.type == 'ellipse') {
+            ctx.strokeStyle = shape.color;
+            ctx.lineWidth = shape.lineWidth;
             ctx.beginPath();
             ctx.ellipse(
                 shape.center.x,
@@ -99,6 +97,26 @@ export function render(
                 Math.PI * 2
             );
             ctx.stroke();
+        } else if (shape.type == 'image') {
+            const img = new Image();
+            img.src = `data:image/webp;base64,${shape.base64}`;
+            img.onload = () => {
+                if (shape.type == 'image') {
+                    ctx.drawImage(
+                        img,
+                        shape.center.x - (img.width * shape.scale.x) / 2,
+                        shape.center.y - (img.height * shape.scale.y) / 2,
+                        img.width * shape.scale.x,
+                        img.height * shape.scale.y
+                    );
+                }
+            };
+        } else {
+            ctx.fillStyle = shape.color;
+            ctx.font = shape.font;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(shape.value, shape.center.x, shape.center.y);
         }
     }
 }

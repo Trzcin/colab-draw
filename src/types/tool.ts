@@ -38,4 +38,6 @@ export type MouseArguments = {
     clickSelectShape: shape | undefined;
     selectedShape: shape | undefined;
     updateShape: (shape: shape) => void;
+    setEditText: React.Dispatch<React.SetStateAction<shape | undefined>>;
+    editText: shape | undefined;
 };

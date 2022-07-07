@@ -52,6 +52,21 @@ function App() {
             });
         });
 
+        tempSocket.on('set-img-data', (base64: string) => {
+            setShapes((prev) => {
+                const newStuff = [...prev];
+                const pendingShape = newStuff.find(
+                    (s) => s.type == 'image' && s.base64 == ''
+                );
+                if (pendingShape && pendingShape.type == 'image') {
+                    pendingShape.base64 = base64;
+                } else {
+                    console.error('no pending shape');
+                }
+                return newStuff;
+            });
+        });
+
         tempSocket.on('update-shape', (shape: shape) => {
             console.log('updating shape');
             setShapes((prev) =>

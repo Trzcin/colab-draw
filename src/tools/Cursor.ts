@@ -15,7 +15,7 @@ export const Cursor: tool = {
     mouseUp,
 };
 
-const SELECT_TOLARANCE = 50;
+export const SELECT_TOLARANCE = 50;
 
 function mouseDown(args: MouseArguments) {
     if (args.cursorMode == 'select') {
@@ -34,7 +34,7 @@ function mouseDown(args: MouseArguments) {
                     bestDist = distance;
                     closestShape = shape;
                 }
-            } else {
+            } else if (shape.type == 'polygon') {
                 for (let i = 0; i < shape.points.length; i++) {
                     const pointDist = pointToPointDist(
                         shape.points[i],
