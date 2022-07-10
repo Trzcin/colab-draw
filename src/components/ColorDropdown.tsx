@@ -10,6 +10,8 @@ interface props {
     hideDropdowns: boolean;
     editText: shape | undefined;
     setEditText: React.Dispatch<React.SetStateAction<shape | undefined>>;
+    selectedShape: shape | undefined;
+    setSelectedShape: React.Dispatch<React.SetStateAction<shape | undefined>>;
 }
 
 export function ColorDropdown({
@@ -20,6 +22,8 @@ export function ColorDropdown({
     hideDropdowns,
     editText,
     setEditText,
+    selectedShape,
+    setSelectedShape,
 }: props) {
     const [showDrop, setShowDrop] = useState(false);
 
@@ -33,6 +37,12 @@ export function ColorDropdown({
         if (editText && editText.type == 'text') {
             setEditText((prev) => {
                 if (!prev || prev.type != 'text') return prev;
+                prev.color = c;
+                return prev;
+            });
+        } else if (selectedShape && selectedShape.type != 'image') {
+            setSelectedShape((prev) => {
+                if (!prev || prev.type == 'image') return prev;
                 prev.color = c;
                 return prev;
             });
@@ -81,7 +91,12 @@ export function ColorDropdown({
                                 r={
                                     editText == undefined ||
                                     editText.type != 'text'
-                                        ? selectedColor == c
+                                        ? (
+                                              selectedShape &&
+                                              selectedShape.type != 'image'
+                                                  ? selectedShape.color == c
+                                                  : selectedColor == c
+                                          )
                                             ? 13
                                             : 10
                                         : editText.color == c
@@ -91,14 +106,20 @@ export function ColorDropdown({
                                 fill={c}
                             ></circle>
 
-                            {selectedColor == c ? (
+                            {(selectedColor == c && !selectedShape) ||
+                            (selectedShape &&
+                                selectedShape.type != 'image' &&
+                                selectedShape.color == c) ? (
                                 <circle
                                     cx={20}
                                     cy={20}
                                     r={
                                         editText == undefined ||
                                         editText.type != 'text'
-                                            ? selectedColor == c
+                                            ? selectedShape &&
+                                              selectedShape.color == c
+                                                ? 18
+                                                : selectedColor == c
                                                 ? 18
                                                 : 15
                                             : editText.color == c

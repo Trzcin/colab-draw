@@ -103,7 +103,7 @@ io.on('connection', (socket: Socket) => {
         const roomId = Array.from(socket.rooms).pop();
         if (!roomId) return;
         boards[roomId] = boards[roomId].filter((s) => s.id != id);
-        socket.broadcast.to(roomId).emit('delete-shape', id);
+        io.to(roomId).emit('delete-shape', id);
     });
 });
 

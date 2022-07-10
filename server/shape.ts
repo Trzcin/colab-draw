@@ -27,15 +27,19 @@ export type shape =
           id: string;
           type: 'image';
           center: point;
+          scale: point;
           base64: string;
           remote?: boolean;
           rotation?: number;
+          size?: point;
       }
     | {
           id: string;
           type: 'text';
           center: point;
           value: string;
+          font: string;
+          color: string;
           remote?: boolean;
           rotation?: number;
       };

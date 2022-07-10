@@ -40,6 +40,7 @@ interface props {
         >,
         overwriteCursorMode?: c_mode
     ) => void;
+    scrolled: boolean;
 }
 
 export function SelectBox({
@@ -55,11 +56,11 @@ export function SelectBox({
     handleMouseDown,
     handleMouseMove,
     handleMouseUp,
+    scrolled,
 }: props) {
     const [pos, setPos] = useState<point>({ x: 0, y: 0 });
     const [size, setSize] = useState<point>({ x: 0, y: 0 });
-    const [center, setCenter] = useState<point>({ x: 0, y: 0 });
-    const container = useRef<HTMLDivElement>(null);
+    const [scrolledUpd, setScrolledUpd] = useState(true);
     const [hovering, setHovering] = useState(false);
 
     useEffect(() => {
@@ -71,13 +72,8 @@ export function SelectBox({
     }, [currTool]);
 
     useEffect(() => {
-        if (!container.current) return;
-
-        setCenter({
-            x: pos.x + 0.5 * size.x - container.current.offsetLeft,
-            y: pos.y + 0.5 * size.y - container.current.offsetTop,
-        });
-    }, [pos, size]);
+        setScrolledUpd(false);
+    }, [scrolled]);
 
     useEffect(() => {
         if (!hovering && !isMouseDown) {
@@ -87,7 +83,7 @@ export function SelectBox({
 
     useEffect(() => {
         if (!selectedShape || !ctx) return;
-
+        setScrolledUpd(true);
         if (selectedShape.type == 'polygon') {
             let leftTop = { x: Infinity, y: Infinity };
             let rightBottom = { x: 0, y: 0 };
@@ -108,16 +104,44 @@ export function SelectBox({
                 y: rightBottom.y - leftTop.y + 2 * BOX_MARGIN,
             });
         } else if (selectedShape.type == 'ellipse') {
-            setPos({
-                x: selectedShape.center.x - selectedShape.radius.x - BOX_MARGIN,
-                y: selectedShape.center.y - selectedShape.radius.y - BOX_MARGIN,
-            });
+            let leftTop = {
+                x: selectedShape.center.x - selectedShape.radius.x,
+                y: selectedShape.center.y - selectedShape.radius.y,
+            };
+            let rightBottom = {
+                x: selectedShape.center.x + selectedShape.radius.x,
+                y: selectedShape.center.y + selectedShape.radius.y,
+            };
+
+            leftTop = canvasToScreenPoint(ctx, leftTop);
+            rightBottom = canvasToScreenPoint(ctx, rightBottom);
+
+            setPos({ x: leftTop.x - BOX_MARGIN, y: leftTop.y - BOX_MARGIN });
             setSize({
-                x: 2 * selectedShape.radius.x + 2 * BOX_MARGIN,
-                y: 2 * selectedShape.radius.y + 2 * BOX_MARGIN,
+                x: rightBottom.x - leftTop.x + 2 * BOX_MARGIN,
+                y: rightBottom.y - leftTop.y + 2 * BOX_MARGIN,
+            });
+        } else {
+            if (!selectedShape.size) return;
+            let leftTop = {
+                x: selectedShape.center.x - selectedShape.size.x / 2,
+                y: selectedShape.center.y - selectedShape.size.y / 2,
+            };
+            let rightBottom = {
+                x: selectedShape.center.x + selectedShape.size.x / 2,
+                y: selectedShape.center.y + selectedShape.size.y / 2,
+            };
+
+            leftTop = canvasToScreenPoint(ctx, leftTop);
+            rightBottom = canvasToScreenPoint(ctx, rightBottom);
+
+            setPos({ x: leftTop.x - BOX_MARGIN, y: leftTop.y - BOX_MARGIN });
+            setSize({
+                x: rightBottom.x - leftTop.x + 2 * BOX_MARGIN,
+                y: rightBottom.y - leftTop.y + 2 * BOX_MARGIN,
             });
         }
-    }, [selectedShape, shapes]);
+    }, [selectedShape, shapes, scrolledUpd]);
 
     return selectedShape ? (
         <div
@@ -171,7 +195,8 @@ export function SelectBox({
                     left: size.x - 21,
                     top: size.y - 21,
                     display:
-                        cursorMode != 'select' && isMouseDown
+                        (cursorMode != 'select' && isMouseDown) ||
+                        selectedShape.type == 'text'
                             ? 'none'
                             : 'block',
                 }}

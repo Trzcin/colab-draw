@@ -36,6 +36,8 @@ interface props {
     hideDropdowns: boolean;
     editText: shape | undefined;
     setEditText: React.Dispatch<React.SetStateAction<shape | undefined>>;
+    selectedShape: shape | undefined;
+    setSelectedShape: React.Dispatch<React.SetStateAction<shape | undefined>>;
 }
 
 export function Toolbar({
@@ -49,6 +51,8 @@ export function Toolbar({
     hideDropdowns,
     editText,
     setEditText,
+    selectedShape,
+    setSelectedShape,
 }: props) {
     const [colors, setColors] = useState<string[]>([
         '#111111',
@@ -165,6 +169,8 @@ export function Toolbar({
                 lineStyle={strokeStyle}
                 setLineStyle={setStrokeStyle}
                 hideDropdowns={hideDropdowns}
+                selectedShape={selectedShape}
+                setSelectedShape={setSelectedShape}
             ></LineStyleDropdown>
 
             <span className="toolbar-btn-group">
@@ -178,8 +184,24 @@ export function Toolbar({
 
             <input
                 type="number"
-                value={lineWidth}
-                onChange={(e) => setLineWidth(parseInt(e.target.value))}
+                value={
+                    selectedShape &&
+                    (selectedShape.type == 'polygon' ||
+                        selectedShape?.type == 'ellipse')
+                        ? selectedShape.lineWidth
+                        : lineWidth
+                }
+                onChange={(e) =>
+                    selectedShape &&
+                    (selectedShape.type == 'polygon' ||
+                        selectedShape?.type == 'ellipse')
+                        ? setSelectedShape((prev) => {
+                              //@ts-ignore
+                              prev.lineWidth = parseInt(e.target.value);
+                              return prev;
+                          })
+                        : setLineWidth(parseInt(e.target.value))
+                }
             />
 
             <div className="spacer"></div>
@@ -188,7 +210,13 @@ export function Toolbar({
                 <button
                     onClick={() =>
                         editText == undefined
-                            ? setSelectedColor(c)
+                            ? selectedShape && selectedShape.type != 'image'
+                                ? setSelectedShape((prev) => {
+                                      //@ts-ignore
+                                      prev.color = c;
+                                      return prev;
+                                  })
+                                : setSelectedColor(c)
                             : setEditText((prev) => {
                                   if (!prev || prev.type != 'text') return prev;
                                   prev.color = c;
@@ -203,7 +231,12 @@ export function Toolbar({
                             cy={15}
                             r={
                                 editText == undefined || editText.type != 'text'
-                                    ? selectedColor == c
+                                    ? (
+                                          selectedShape &&
+                                          selectedShape.type != 'image'
+                                              ? selectedShape.color == c
+                                              : selectedColor == c
+                                      )
                                         ? 15
                                         : 12
                                     : editText.color == c
@@ -224,6 +257,8 @@ export function Toolbar({
                 hideDropdowns={hideDropdowns}
                 editText={editText}
                 setEditText={setEditText}
+                selectedShape={selectedShape}
+                setSelectedShape={setSelectedShape}
             ></ColorDropdown>
 
             <div
@@ -232,7 +267,9 @@ export function Toolbar({
                     left: colorUnderLinePos[
                         colors.indexOf(
                             editText == undefined || editText.type != 'text'
-                                ? selectedColor
+                                ? selectedShape && selectedShape.type != 'image'
+                                    ? selectedShape.color
+                                    : selectedColor
                                 : editText.color
                         )
                     ],

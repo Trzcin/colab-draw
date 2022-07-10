@@ -19,17 +19,13 @@ export function rotateShape(_shape: shape, mousePos: point): shape {
         });
 
         shape.rotation = angle;
-    } else if (shape.type == 'ellipse') {
+    } else {
         const angle = findAngle({
             x: mousePos.x - shape.center.x,
             y: mousePos.y - shape.center.y,
         });
 
-        if (shape.rotation) {
-            shape.rotation += angle;
-        } else {
-            shape.rotation = angle;
-        }
+        shape.rotation = angle;
     }
 
     return shape;

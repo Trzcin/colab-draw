@@ -2,19 +2,23 @@ import SolidIcon from '../icons/solid_icon.svg';
 import DottedIcon from '../icons/dotted_icon.svg';
 import DashedIcon from '../icons/dashed_icon.svg';
 import DropdownIcon from '../icons/dropdown_icon.svg';
-import { stroke } from '../types/shape';
+import { shape, stroke } from '../types/shape';
 import { useEffect, useState } from 'react';
 
 interface props {
     lineStyle: stroke;
     setLineStyle: React.Dispatch<React.SetStateAction<stroke>>;
     hideDropdowns: boolean;
+    selectedShape: shape | undefined;
+    setSelectedShape: React.Dispatch<React.SetStateAction<shape | undefined>>;
 }
 
 export function LineStyleDropdown({
     lineStyle,
     setLineStyle,
     hideDropdowns,
+    selectedShape,
+    setSelectedShape,
 }: props) {
     const [showDrop, setShowDrop] = useState(false);
 
@@ -32,13 +36,27 @@ export function LineStyleDropdown({
             >
                 <img
                     src={
-                        lineStyle == 'solid'
+                        selectedShape &&
+                        (selectedShape.type == 'polygon' ||
+                            selectedShape?.type == 'ellipse')
+                            ? selectedShape.strokeStyle == 'solid'
+                                ? SolidIcon
+                                : selectedShape.strokeStyle == 'dashed'
+                                ? DashedIcon
+                                : DottedIcon
+                            : lineStyle == 'solid'
                             ? SolidIcon
                             : lineStyle == 'dashed'
                             ? DashedIcon
                             : DottedIcon
                     }
-                    alt={`${lineStyle} line style`}
+                    alt={`${
+                        selectedShape &&
+                        (selectedShape.type == 'polygon' ||
+                            selectedShape?.type == 'ellipse')
+                            ? selectedShape.strokeStyle
+                            : lineStyle
+                    } line style`}
                 />
                 <img
                     src={DropdownIcon}
@@ -56,9 +74,28 @@ export function LineStyleDropdown({
             >
                 <button
                     className={`dropdown-tool drop-tool-top ${
-                        lineStyle == 'solid' ? 'dropdown-active' : ''
+                        selectedShape &&
+                        (selectedShape.type == 'polygon' ||
+                            selectedShape?.type == 'ellipse')
+                            ? selectedShape.strokeStyle == 'solid'
+                            : lineStyle == 'solid'
+                            ? 'dropdown-active'
+                            : ''
                     }`}
                     onClick={() => {
+                        if (
+                            selectedShape &&
+                            (selectedShape.type == 'polygon' ||
+                                selectedShape.type == 'ellipse')
+                        ) {
+                            setSelectedShape((prev) => {
+                                //@ts-ignore
+                                prev.strokeStyle = 'solid';
+                                return prev;
+                            });
+                            setShowDrop(false);
+                            return;
+                        }
                         setLineStyle('solid');
                         setShowDrop(false);
                     }}
@@ -67,16 +104,43 @@ export function LineStyleDropdown({
                         src={SolidIcon}
                         alt="solid lines"
                         className={`${
-                            lineStyle == 'solid' ? 'tool-selected' : ''
+                            (
+                                selectedShape &&
+                                (selectedShape.type == 'polygon' ||
+                                    selectedShape?.type == 'ellipse')
+                                    ? selectedShape.strokeStyle == 'solid'
+                                    : lineStyle == 'solid'
+                            )
+                                ? 'tool-selected'
+                                : ''
                         }`}
                     />
                     <p>Solid lines</p>
                 </button>
                 <button
                     className={`dropdown-tool ${
-                        lineStyle == 'dashed' ? 'dropdown-active' : ''
+                        selectedShape &&
+                        (selectedShape.type == 'polygon' ||
+                            selectedShape?.type == 'ellipse')
+                            ? selectedShape.strokeStyle == 'dashed'
+                            : lineStyle == 'dashed'
+                            ? 'dropdown-active'
+                            : ''
                     }`}
                     onClick={() => {
+                        if (
+                            selectedShape &&
+                            (selectedShape.type == 'polygon' ||
+                                selectedShape.type == 'ellipse')
+                        ) {
+                            setSelectedShape((prev) => {
+                                //@ts-ignore
+                                prev.strokeStyle = 'dashed';
+                                return prev;
+                            });
+                            setShowDrop(false);
+                            return;
+                        }
                         setLineStyle('dashed');
                         setShowDrop(false);
                     }}
@@ -85,16 +149,43 @@ export function LineStyleDropdown({
                         src={DashedIcon}
                         alt="dashed lines"
                         className={`${
-                            lineStyle == 'dashed' ? 'tool-selected' : ''
+                            (
+                                selectedShape &&
+                                (selectedShape.type == 'polygon' ||
+                                    selectedShape?.type == 'ellipse')
+                                    ? selectedShape.strokeStyle == 'dashed'
+                                    : lineStyle == 'dashed'
+                            )
+                                ? 'tool-selected'
+                                : ''
                         }`}
                     />
                     <p>Dashed lines</p>
                 </button>
                 <button
                     className={`dropdown-tool drop-tool-bottom ${
-                        lineStyle == 'dotted' ? 'dropdown-active' : ''
+                        selectedShape &&
+                        (selectedShape.type == 'polygon' ||
+                            selectedShape?.type == 'ellipse')
+                            ? selectedShape.strokeStyle == 'dotted'
+                            : lineStyle == 'dotted'
+                            ? 'dropdown-active'
+                            : ''
                     }`}
                     onClick={() => {
+                        if (
+                            selectedShape &&
+                            (selectedShape.type == 'polygon' ||
+                                selectedShape.type == 'ellipse')
+                        ) {
+                            setSelectedShape((prev) => {
+                                //@ts-ignore
+                                prev.strokeStyle = 'dotted';
+                                return prev;
+                            });
+                            setShowDrop(false);
+                            return;
+                        }
                         setLineStyle('dotted');
                         setShowDrop(false);
                     }}
@@ -103,7 +194,15 @@ export function LineStyleDropdown({
                         src={DottedIcon}
                         alt="dotted lines"
                         className={`${
-                            lineStyle == 'dotted' ? 'tool-selected' : ''
+                            (
+                                selectedShape &&
+                                (selectedShape.type == 'polygon' ||
+                                    selectedShape?.type == 'ellipse')
+                                    ? selectedShape.strokeStyle == 'dotted'
+                                    : lineStyle == 'dotted'
+                            )
+                                ? 'tool-selected'
+                                : ''
                         }`}
                     />
                     <p>Dotted lines</p>

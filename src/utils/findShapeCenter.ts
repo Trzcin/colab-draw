@@ -2,7 +2,7 @@ import { point } from '../types/point';
 import { shape } from '../types/shape';
 
 export function findShapeCenter(shape: shape): point {
-    if (shape.type == 'ellipse') {
+    if (shape.type != 'polygon') {
         return shape.center;
     }
 

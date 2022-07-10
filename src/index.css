@@ -86,11 +86,11 @@ nav > input[type=number] {
     border: none;
     outline: none;
     cursor: pointer;
-    display: block;
     margin: 0;
     display: flex;
     align-items: center;
     padding: 5px 10px;
+    height: 45px;
 }
 
 .dropdown-active {
@@ -165,12 +165,12 @@ nav > input[type=number] {
 }
 
 .line-drop {
-    transform: translate(0, -57px) scaleY(0);
+    transform: translate(0, -84px) scaleY(0);
     transition: transform .2s ease-in-out;
 }
 
 .line-drop-anim {
-    transform: translate(0, -107px) scaleY(1);
+    transform: translate(0, -152px) scaleY(1);
 }
 
 .tooltip {
@@ -215,7 +215,6 @@ nav > input[type=number] {
 .text-edit-wrapper {
     position: absolute;
     width: 300px;
-    transform: translate(-50%, -15px);
 }
 
 .text-edit-input {

@@ -25,6 +25,7 @@ function mouseDown(args: MouseArguments) {
                 args.updateShape(args.editText);
             }
         }
+        args.editText.editMode = false;
         args.setEditText(undefined);
         return;
     }

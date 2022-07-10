@@ -7,6 +7,7 @@ import { scaleShape } from '../utils/scaleShape';
 import { rotateShape } from '../utils/rotateShape';
 import { rotatePoint } from '../utils/rotatePoint';
 import { findShapeCenter } from '../utils/findShapeCenter';
+import { pointToSegmentDist } from '../utils/pointToSegmentDist';
 
 export const Cursor: tool = {
     name: 'cursor',
@@ -46,7 +47,7 @@ function mouseDown(args: MouseArguments) {
                     }
                     if (i == shape.points.length - 1) continue;
 
-                    const lineDist = lineToPointDist(
+                    const lineDist = pointToSegmentDist(
                         shape.points[i],
                         shape.points[i + 1],
                         args.mousePos
@@ -56,6 +57,24 @@ function mouseDown(args: MouseArguments) {
                         bestDist = lineDist;
                         closestShape = shape;
                     }
+                }
+            } else {
+                if (!shape.size) return;
+
+                const rotatedMouse = rotatePoint(
+                    args.mousePos,
+                    shape.center,
+                    (shape.rotation ?? 0) * -1
+                );
+
+                if (
+                    rotatedMouse.x >= shape.center.x - shape.size.x / 2 &&
+                    rotatedMouse.x <= shape.center.x + shape.size.x / 2 &&
+                    rotatedMouse.y >= shape.center.y - shape.size.y / 2 &&
+                    rotatedMouse.y <= shape.center.y + shape.size.y / 2
+                ) {
+                    bestDist = 0;
+                    closestShape = shape;
                 }
             }
         }
@@ -70,9 +89,10 @@ function mouseMove(args: MouseArguments) {
     if (args.cursorMode == 'move') {
         if (!args.clickSelectShape) return;
 
+        const transform = args.ctx.getTransform();
         const moveVector = {
-            x: args.mousePosRaw.x - args.clickMousePosRaw.x,
-            y: args.mousePosRaw.y - args.clickMousePosRaw.y,
+            x: (args.mousePosRaw.x - args.clickMousePosRaw.x) / transform.a,
+            y: (args.mousePosRaw.y - args.clickMousePosRaw.y) / transform.a,
         };
 
         args.setShapes((prev) => {
@@ -97,6 +117,26 @@ function mouseMove(args: MouseArguments) {
                 theShape.points = args.clickSelectShape.points.map((p) => {
                     return { x: p.x + moveVector.x, y: p.y + moveVector.y };
                 });
+            } else if (
+                theShape.type == 'image' &&
+                args.clickSelectShape.type == 'image'
+            ) {
+                const newCenter = {
+                    x: args.clickSelectShape.center.x + moveVector.x,
+                    y: args.clickSelectShape.center.y + moveVector.y,
+                };
+
+                theShape.center = newCenter;
+            } else if (
+                theShape.type == 'text' &&
+                args.clickSelectShape.type == 'text'
+            ) {
+                const newCenter = {
+                    x: args.clickSelectShape.center.x + moveVector.x,
+                    y: args.clickSelectShape.center.y + moveVector.y,
+                };
+
+                theShape.center = newCenter;
             }
 
             return newStuff;
@@ -119,7 +159,6 @@ function mouseMove(args: MouseArguments) {
             x: rotatedMouse.x - rotatedClick.x,
             y: rotatedMouse.y - rotatedClick.y,
         };
-        console.log(moveVector);
         args.setShapes((prev) => {
             if (!args.selectedShape || !args.clickSelectShape) return prev;
             const newStuff = [...prev];
@@ -140,6 +179,13 @@ function mouseMove(args: MouseArguments) {
                 if (updatedShape.type != 'ellipse') return newStuff;
                 shapeToUpdate.center = updatedShape.center;
                 shapeToUpdate.radius = updatedShape.radius;
+            } else if (shapeToUpdate.type == 'image') {
+                const updatedShape = scaleShape(
+                    args.clickSelectShape,
+                    moveVector
+                );
+                if (updatedShape.type != 'image') return newStuff;
+                shapeToUpdate.size = updatedShape.size;
             }
 
             return newStuff;
@@ -150,21 +196,11 @@ function mouseMove(args: MouseArguments) {
             const newStuff = [...prev];
             const shapeToUpdate =
                 newStuff[newStuff.indexOf(args.selectedShape)];
-            if (shapeToUpdate.type == 'polygon') {
-                const updatedShape = rotateShape(
-                    args.clickSelectShape,
-                    args.mousePos
-                );
-                if (updatedShape.type != 'polygon') return newStuff;
-                shapeToUpdate.rotation = updatedShape.rotation;
-            } else if (shapeToUpdate.type == 'ellipse') {
-                const updatedShape = rotateShape(
-                    args.clickSelectShape,
-                    args.mousePos
-                );
-                if (updatedShape.type != 'ellipse') return newStuff;
-                shapeToUpdate.rotation = updatedShape.rotation;
-            }
+            const updatedShape = rotateShape(
+                args.clickSelectShape,
+                args.mousePos
+            );
+            shapeToUpdate.rotation = updatedShape.rotation;
 
             return newStuff;
         });

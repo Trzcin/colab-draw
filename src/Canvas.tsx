@@ -17,9 +17,16 @@ interface props {
     setShapes: React.Dispatch<React.SetStateAction<shape[]>>;
     sendShape: (shape: shape) => void;
     updateShape: (shape: shape) => void;
+    removeShape: (shape: shape) => void;
 }
 
-export function Canvas({ setShapes, shapes, sendShape, updateShape }: props) {
+export function Canvas({
+    setShapes,
+    shapes,
+    sendShape,
+    updateShape,
+    removeShape,
+}: props) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [ctx, setCtx] = useState<CanvasRenderingContext2D>();
     const [mousePos, setMousePos] = useState<point>({ x: 0, y: 0 });
@@ -44,6 +51,7 @@ export function Canvas({ setShapes, shapes, sendShape, updateShape }: props) {
     const [cursorMode, setCursorMode] = useState<c_mode>('select');
     const [clickSelectShape, setClickSelectShape] = useState<shape>();
     const [editText, setEditText] = useState<shape>();
+    const [scrolled, setScrolled] = useState(false);
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -74,6 +82,13 @@ export function Canvas({ setShapes, shapes, sendShape, updateShape }: props) {
                 x: e.pageX,
                 y: e.pageY,
             });
+        };
+
+        window.onkeydown = (e) => {
+            if (e.key == 'Delete' && selectedShape) {
+                setSelectedShape(undefined);
+                removeShape(selectedShape);
+            }
         };
 
         document.addEventListener('mouseout', (e) => {
@@ -107,7 +122,20 @@ export function Canvas({ setShapes, shapes, sendShape, updateShape }: props) {
 
             render(ctx, shapes, CANVAS_COLOR);
         };
+
+        window.onclick = () => {
+            render(ctx, shapes, CANVAS_COLOR);
+        };
     }, [shapes, ctx]);
+
+    useEffect(() => {
+        window.onkeydown = (e) => {
+            if (e.key == 'Delete' && selectedShape) {
+                setSelectedShape(undefined);
+                removeShape(selectedShape);
+            }
+        };
+    }, [selectedShape]);
 
     // render
     useEffect(() => {
@@ -130,6 +158,7 @@ export function Canvas({ setShapes, shapes, sendShape, updateShape }: props) {
                     updateShape(editText);
                 }
             }
+            editText.editMode = false;
             setEditText(undefined);
         }
     }, [currTool, editText]);
@@ -139,6 +168,7 @@ export function Canvas({ setShapes, shapes, sendShape, updateShape }: props) {
         const factor = e.deltaY < 0 ? 1.1 : 0.9;
         zoom(factor, ctx, mousePos);
         render(ctx, shapes, CANVAS_COLOR);
+        setScrolled((prev) => !prev);
     }
 
     function handleMouseDown(
@@ -279,7 +309,7 @@ export function Canvas({ setShapes, shapes, sendShape, updateShape }: props) {
     }
 
     function endPolygon() {
-        if (shapes.length == 0) {
+        if (shapes.length == 0 || !isUsingPolygon) {
             return;
         }
 
@@ -312,7 +342,6 @@ export function Canvas({ setShapes, shapes, sendShape, updateShape }: props) {
             const newShape: shape = {
                 id: '',
                 type: 'image',
-                scale: { x: 1, y: 1 },
                 center: { ...mousePos },
                 base64: '',
             };
@@ -339,7 +368,9 @@ export function Canvas({ setShapes, shapes, sendShape, updateShape }: props) {
                             : 'crosshair',
                 }}
                 onKeyDown={(e) => {
-                    if (e.key == 'Escape') endPolygon();
+                    if (e.key == 'Escape') {
+                        endPolygon();
+                    }
                 }}
                 tabIndex={-1}
                 onDrop={(e) => handleDrop(e)}
@@ -368,6 +399,8 @@ export function Canvas({ setShapes, shapes, sendShape, updateShape }: props) {
                 hideDropdowns={hideDropdowns}
                 editText={editText}
                 setEditText={setEditText}
+                selectedShape={selectedShape}
+                setSelectedShape={setSelectedShape}
             ></Toolbar>
             <SelectBox
                 selectedShape={selectedShape}
@@ -382,10 +415,12 @@ export function Canvas({ setShapes, shapes, sendShape, updateShape }: props) {
                 handleMouseDown={handleMouseDown}
                 handleMouseMove={handleMouseMove}
                 handleMouseUp={handleMouseUp}
+                scrolled={scrolled}
             ></SelectBox>
             <TextEditor
                 editText={editText}
                 setEditText={setEditText}
+                ctx={ctx}
             ></TextEditor>
         </>
     );

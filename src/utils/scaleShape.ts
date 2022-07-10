@@ -1,13 +1,7 @@
 import { point } from '../types/point';
 import { shape } from '../types/shape';
-import { findShapeCenter } from './findShapeCenter';
-import { rotatePoint } from './rotatePoint';
 
-export function scaleShape(
-    _shape: shape,
-    moveVector: point,
-    fromCenter?: boolean
-): shape {
+export function scaleShape(_shape: shape, moveVector: point): shape {
     const shape = { ..._shape };
 
     if (shape.type == 'polygon') {
@@ -64,6 +58,17 @@ export function scaleShape(
         if (shape.radius.y < 0) {
             shape.radius.y *= -1;
             shape.center.y -= 2 * shape.radius.y;
+        }
+    } else if (shape.type == 'image') {
+        if (shape.imageElement && shape.size) {
+            const factor = {
+                x: 1 + moveVector.x / shape.size.x,
+                y: 1 + moveVector.y / shape.size.y,
+            };
+            shape.size = {
+                x: Math.round(shape.size.x * factor.x),
+                y: Math.round(shape.size.y * factor.y),
+            };
         }
     }
 

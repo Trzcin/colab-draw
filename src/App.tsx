@@ -37,6 +37,9 @@ function App() {
 
         tempSocket.on('add-shape', (shape: shape) => {
             console.log('adding shape');
+            if (shape.type == 'image') {
+                shape.imageElement = undefined;
+            }
             setShapes((prev) => [...prev, { ...shape, remote: true }]);
         });
 
@@ -60,6 +63,7 @@ function App() {
                 );
                 if (pendingShape && pendingShape.type == 'image') {
                     pendingShape.base64 = base64;
+                    pendingShape.imageElement = undefined;
                 } else {
                     console.error('no pending shape');
                 }
@@ -69,6 +73,10 @@ function App() {
 
         tempSocket.on('update-shape', (shape: shape) => {
             console.log('updating shape');
+            if (shape.type == 'image') {
+                shape.imageElement = undefined;
+            }
+
             setShapes((prev) =>
                 prev.map((s) =>
                     s.id == shape.id ? { ...shape, remote: true } : s
@@ -98,12 +106,19 @@ function App() {
         socket.emit('change', shape);
     }
 
+    function removeShape(shape: shape) {
+        if (!socket || shape.id == '') return;
+        console.log('removing shape');
+        socket.emit('remove', shape.id);
+    }
+
     return (
         <Canvas
             shapes={shapes}
             setShapes={setShapes}
             sendShape={sendShape}
             updateShape={updateShape}
+            removeShape={removeShape}
         ></Canvas>
     );
 }

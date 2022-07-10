@@ -27,10 +27,11 @@ export type shape =
           id: string;
           type: 'image';
           center: point;
-          scale: point;
           base64: string;
           remote?: boolean;
           rotation?: number;
+          size?: point;
+          imageElement?: HTMLImageElement;
       }
     | {
           id: string;
@@ -41,6 +42,8 @@ export type shape =
           color: string;
           remote?: boolean;
           rotation?: number;
+          size?: point;
+          editMode?: boolean;
       };
 
 export type stroke = 'solid' | 'dashed' | 'dotted';

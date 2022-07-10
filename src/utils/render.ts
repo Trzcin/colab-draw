@@ -19,6 +19,13 @@ export function render(
         if (shape.type == 'polygon') {
             ctx.strokeStyle = shape.color;
             ctx.lineWidth = shape.lineWidth;
+            ctx.setLineDash(
+                shape.strokeStyle == 'dashed'
+                    ? [15, 15]
+                    : shape.strokeStyle == 'dotted'
+                    ? [5, 10]
+                    : [0, 0]
+            );
             ctx.save();
             const center = findShapeCenter(shape);
 
@@ -86,6 +93,13 @@ export function render(
         } else if (shape.type == 'ellipse') {
             ctx.strokeStyle = shape.color;
             ctx.lineWidth = shape.lineWidth;
+            ctx.setLineDash(
+                shape.strokeStyle == 'dashed'
+                    ? [15, 15]
+                    : shape.strokeStyle == 'dotted'
+                    ? [5, 10]
+                    : [0, 0]
+            );
             ctx.beginPath();
             ctx.ellipse(
                 shape.center.x,
@@ -98,25 +112,80 @@ export function render(
             );
             ctx.stroke();
         } else if (shape.type == 'image') {
-            const img = new Image();
-            img.src = `data:image/webp;base64,${shape.base64}`;
-            img.onload = () => {
-                if (shape.type == 'image') {
-                    ctx.drawImage(
-                        img,
-                        shape.center.x - (img.width * shape.scale.x) / 2,
-                        shape.center.y - (img.height * shape.scale.y) / 2,
-                        img.width * shape.scale.x,
-                        img.height * shape.scale.y
-                    );
-                }
-            };
+            if (!shape.imageElement) {
+                const img = new Image();
+                img.src = `data:image/webp;base64,${shape.base64}`;
+                img.onload = () => {
+                    if (shape.type == 'image') {
+                        ctx.save();
+                        const transform = ctx.getTransform();
+                        const translate = {
+                            x: shape.center.x - transform.e,
+                            y: shape.center.y - transform.f,
+                        };
+                        ctx.translate(translate.x, translate.y);
+                        ctx.rotate(shape.rotation ?? 0);
+
+                        if (!shape.size) {
+                            shape.size = {
+                                x: img.width,
+                                y: img.height,
+                            };
+                        }
+
+                        ctx.drawImage(
+                            img,
+                            shape.center.x - translate.x - shape.size.x / 2,
+                            shape.center.y - translate.y - shape.size.y / 2,
+                            shape.size.x,
+                            shape.size.y
+                        );
+                    }
+                    ctx.restore();
+                };
+                shape.imageElement = img;
+            } else if (shape.size != undefined) {
+                ctx.save();
+                const transform = ctx.getTransform();
+                const translate = {
+                    x: shape.center.x - transform.e,
+                    y: shape.center.y - transform.f,
+                };
+                ctx.translate(translate.x, translate.y);
+                ctx.rotate(shape.rotation ?? 0);
+
+                ctx.drawImage(
+                    shape.imageElement,
+                    shape.center.x - translate.x - shape.size.x / 2,
+                    shape.center.y - translate.y - shape.size.y / 2,
+                    shape.size.x,
+                    shape.size.y
+                );
+
+                ctx.restore();
+            }
         } else {
+            if (shape.editMode) return;
+
+            ctx.save();
+            const transform = ctx.getTransform();
+            const translate = {
+                x: shape.center.x - transform.e,
+                y: shape.center.y - transform.f,
+            };
+            ctx.translate(translate.x, translate.y);
+            ctx.rotate(shape.rotation ?? 0);
+
             ctx.fillStyle = shape.color;
             ctx.font = shape.font;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(shape.value, shape.center.x, shape.center.y);
+            ctx.fillText(
+                shape.value,
+                shape.center.x - translate.x,
+                shape.center.y - translate.y
+            );
+            ctx.restore();
         }
     }
 }
