@@ -1,6 +1,9 @@
 # ColabDraw
 
 Realtime whiteboard app built with React and Socket.io. Supports smoothed freehand drawing, basic geometric shapes, text and images.
+
+## Example
+
 ![Screenshot](./git-assets/ColabDraw.png)
 
 ## Running
